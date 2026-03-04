@@ -26,6 +26,13 @@ final class MSC_Dynamic_Navbar {
 
     /* ─── Build a tree from flat WP menu items ────────────── */
 
+    private static function is_current_url( $url ) {
+        if ( ! $url || $url === '#' ) return false;
+        $current = trailingslashit( strtok( $_SERVER['REQUEST_URI'], '?' ) );
+        $target  = trailingslashit( wp_parse_url( $url, PHP_URL_PATH ) ?: '/' );
+        return $current === $target;
+    }
+
     private static function get_menu_tree() {
         $locations = get_nav_menu_locations();
         if ( empty( $locations['msc_navbar'] ) ) return null;
@@ -48,6 +55,7 @@ final class MSC_Dynamic_Navbar {
                 'url'      => $item->url,
                 'target'   => $item->target,
                 'classes'  => array_filter( (array) $item->classes ),
+                'current'  => self::is_current_url( $item->url ),
                 'parent'   => (int) $item->menu_item_parent,
                 'children' => [],
             ];
@@ -59,6 +67,16 @@ final class MSC_Dynamic_Navbar {
                 $map[ $node->parent ]->children[] = $node;
             } else {
                 $tree[] = $node;
+            }
+        }
+
+        /* Mark parent as current-ancestor if any child is current */
+        foreach ( $tree as $node ) {
+            foreach ( $node->children as $child ) {
+                if ( $child->current ) {
+                    $node->current_ancestor = true;
+                    break;
+                }
             }
         }
 
@@ -84,20 +102,29 @@ final class MSC_Dynamic_Navbar {
     private static function render_desktop_items( $tree ) {
         $out = '';
         foreach ( $tree as $item ) {
+            $is_active   = ! empty( $item->current );
+            $is_ancestor = ! empty( $item->current_ancestor );
+
             if ( ! empty( $item->children ) ) {
                 $is_placeholder = in_array( $item->url, [ '#', '' ], true );
                 $href    = $is_placeholder ? '#' : esc_url( $item->url );
                 $onclick = $is_placeholder ? ' onclick="return false;" style="cursor:default;"' : '';
+                $li_cls  = 'msc-has-dropdown' . ( $is_ancestor ? ' msc-current-ancestor' : '' );
 
-                $out .= '<li class="msc-has-dropdown" role="none">';
+                $out .= '<li class="' . $li_cls . '" role="none">';
                 $out .= '<a href="' . $href . '" role="menuitem" aria-haspopup="true" aria-expanded="false"' . $onclick . self::link_attrs( $item ) . '>' . esc_html( $item->title ) . '</a>';
                 $out .= '<ul class="msc-dropdown" role="menu">';
                 foreach ( $item->children as $child ) {
-                    $out .= '<li><a href="' . esc_url( $child->url ) . '" role="menuitem"' . self::link_attrs( $child ) . '>' . esc_html( $child->title ) . '</a></li>';
+                    $child_active = ! empty( $child->current );
+                    $child_li_cls = $child_active ? ' class="msc-current"' : '';
+                    $aria_cur     = $child_active ? ' aria-current="page"' : '';
+                    $out .= '<li' . $child_li_cls . '><a href="' . esc_url( $child->url ) . '" role="menuitem"' . $aria_cur . self::link_attrs( $child ) . '>' . esc_html( $child->title ) . '</a></li>';
                 }
                 $out .= '</ul></li>';
             } else {
-                $out .= '<li role="none"><a href="' . esc_url( $item->url ) . '" role="menuitem"' . self::link_attrs( $item ) . '>' . esc_html( $item->title ) . '</a></li>';
+                $li_cls   = $is_active ? ' class="msc-current"' : '';
+                $aria_cur = $is_active ? ' aria-current="page"' : '';
+                $out .= '<li' . $li_cls . ' role="none"><a href="' . esc_url( $item->url ) . '" role="menuitem"' . $aria_cur . self::link_attrs( $item ) . '>' . esc_html( $item->title ) . '</a></li>';
             }
         }
         return $out;
@@ -113,22 +140,31 @@ final class MSC_Dynamic_Navbar {
                . '</svg>';
 
         foreach ( $tree as $item ) {
+            $is_active   = ! empty( $item->current );
+            $is_ancestor = ! empty( $item->current_ancestor );
+
             if ( ! empty( $item->children ) ) {
                 $sub_idx++;
                 $sub_id = 'msc-mob-sub-' . $sub_idx;
+                $li_cls = $is_ancestor ? ' class="msc-current-ancestor"' : '';
 
-                $out .= '<li>';
+                $out .= '<li' . $li_cls . '>';
                 $out .= '<div class="msc-mob-parent-row">';
                 $out .= '<button class="msc-mob-parent" aria-expanded="false" aria-controls="' . $sub_id . '">' . esc_html( $item->title ) . '</button>';
                 $out .= '<span class="msc-mob-arrow">' . $arrow . '</span>';
                 $out .= '</div>';
                 $out .= '<ul class="msc-mob-sub" id="' . $sub_id . '">';
                 foreach ( $item->children as $child ) {
-                    $out .= '<li><a href="' . esc_url( $child->url ) . '"' . self::link_attrs( $child ) . '>' . esc_html( $child->title ) . '</a></li>';
+                    $child_active = ! empty( $child->current );
+                    $child_cls    = $child_active ? ' class="msc-current"' : '';
+                    $aria_cur     = $child_active ? ' aria-current="page"' : '';
+                    $out .= '<li' . $child_cls . '><a href="' . esc_url( $child->url ) . '"' . $aria_cur . self::link_attrs( $child ) . '>' . esc_html( $child->title ) . '</a></li>';
                 }
                 $out .= '</ul></li>';
             } else {
-                $out .= '<li><a href="' . esc_url( $item->url ) . '"' . self::link_attrs( $item ) . '>' . esc_html( $item->title ) . '</a></li>';
+                $li_cls   = $is_active ? ' class="msc-current"' : '';
+                $aria_cur = $is_active ? ' aria-current="page"' : '';
+                $out .= '<li' . $li_cls . '><a href="' . esc_url( $item->url ) . '"' . $aria_cur . self::link_attrs( $item ) . '>' . esc_html( $item->title ) . '</a></li>';
             }
         }
         return $out;
@@ -194,7 +230,7 @@ body.et_fixed_nav{padding-top:0 !important;}
   display:flex !important;align-items:center !important;
   text-decoration:none !important;flex-shrink:0 !important;
   border:none !important;background:none !important;
-  outline:none !important;line-height:0 !important;
+  line-height:0 !important;
 }
 #msc-navbar .msc-logo-img{
   display:block !important;width:auto !important;
@@ -309,13 +345,87 @@ body.et_fixed_nav{padding-top:0 !important;}
 }
 #msc-navbar .msc-cta:hover::before{transform:translateX(0) !important;}
 
+/* ── Nav actions (IG + search icons) ── */
+#msc-navbar .msc-nav-actions{
+  display:flex !important;align-items:center !important;gap:4px !important;
+  flex-shrink:0 !important;
+}
+#msc-navbar .msc-icon-btn{
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  width:34px !important;height:34px !important;
+  color:var(--msc-brown-mid) !important;border-radius:50% !important;
+  transition:color var(--msc-ease),background var(--msc-ease) !important;
+  text-decoration:none !important;border:none !important;background:none !important;
+  cursor:pointer !important;padding:0 !important;box-shadow:none !important;
+}
+#msc-navbar .msc-icon-btn:hover{
+  color:var(--msc-copper) !important;
+  background:rgba(178,110,60,0.08) !important;
+}
+#msc-navbar .msc-icon-btn svg{
+  width:18px !important;height:18px !important;flex-shrink:0 !important;
+}
+
+/* ── Search bar ── */
+#msc-navbar .msc-search-bar{
+  position:absolute !important;top:100% !important;left:0 !important;right:0 !important;
+  background:var(--msc-cream-light) !important;
+  border-top:1px solid var(--msc-cream-border) !important;
+  border-bottom:2px solid var(--msc-gold) !important;
+  box-shadow:0 12px 36px rgba(59,47,38,0.1) !important;
+  padding:16px 40px !important;
+  display:none !important;z-index:1 !important;
+}
+#msc-navbar .msc-search-bar.msc-open{display:block !important;}
+#msc-navbar .msc-search-form{
+  max-width:600px !important;margin:0 auto !important;
+  display:flex !important;gap:10px !important;
+}
+#msc-navbar .msc-search-input{
+  flex:1 !important;
+  font-family:var(--msc-font-body) !important;font-size:1rem !important;
+  color:var(--msc-dark-brown) !important;background:#fff !important;
+  border:1px solid var(--msc-cream-border) !important;
+  border-radius:6px !important;padding:10px 16px !important;
+  outline:none !important;box-shadow:none !important;
+  -webkit-appearance:none !important;
+}
+#msc-navbar .msc-search-input:focus{
+  border-color:var(--msc-copper) !important;
+  box-shadow:0 0 0 3px rgba(178,110,60,0.12) !important;
+}
+#msc-navbar .msc-search-submit{
+  font-family:var(--msc-font-sub) !important;font-size:0.75rem !important;
+  font-weight:600 !important;letter-spacing:0.1em !important;text-transform:uppercase !important;
+  color:var(--msc-cream-light) !important;background:var(--msc-dark-brown) !important;
+  border:none !important;border-radius:6px !important;
+  padding:10px 22px !important;cursor:pointer !important;
+  transition:background var(--msc-ease) !important;
+}
+#msc-navbar .msc-search-submit:hover{background:var(--msc-copper) !important;}
+
+/* ── Mobile menu social ── */
+#msc-mobile-menu .msc-mob-social{
+  display:flex !important;align-items:center !important;gap:12px !important;
+  margin-top:20px !important;padding-top:16px !important;
+  border-top:1px solid rgba(168,149,122,0.2) !important;
+}
+#msc-mobile-menu .msc-mob-social a{
+  display:flex !important;align-items:center !important;gap:8px !important;
+  font-family:var(--msc-font-body) !important;font-size:0.9rem !important;
+  color:var(--msc-brown-mid) !important;text-decoration:none !important;
+  border:none !important;padding:0 !important;
+}
+#msc-mobile-menu .msc-mob-social a:hover{color:var(--msc-copper) !important;}
+#msc-mobile-menu .msc-mob-social svg{width:18px !important;height:18px !important;}
+
 #msc-navbar .msc-hamburger{
   display:none !important;flex-direction:column !important;
   justify-content:center !important;gap:5px !important;
   width:40px !important;height:40px !important;
   background:transparent !important;border:1px solid rgba(92,74,58,0.22) !important;
   border-radius:4px !important;cursor:pointer !important;padding:8px !important;
-  flex-shrink:0 !important;box-shadow:none !important;outline:none !important;
+  flex-shrink:0 !important;box-shadow:none !important;
   transition:border-color var(--msc-ease),background var(--msc-ease) !important;
 }
 #msc-navbar .msc-hamburger:hover{
@@ -368,7 +478,7 @@ body.et_fixed_nav{padding-top:0 !important;}
   background:none !important;border:1px solid rgba(92,74,58,0.2) !important;
   border-radius:50% !important;cursor:pointer !important;
   color:var(--msc-dark-brown) !important;font-size:1rem !important;line-height:1 !important;
-  flex-shrink:0 !important;outline:none !important;box-shadow:none !important;
+  flex-shrink:0 !important;box-shadow:none !important;
 }
 #msc-mobile-menu .msc-panel-close:hover{
   background:rgba(92,74,58,0.08) !important;
@@ -387,7 +497,7 @@ body.et_fixed_nav{padding-top:0 !important;}
   border-bottom:1px solid rgba(168,149,122,0.2) !important;
   width:100% !important;text-align:left !important;background:none !important;
   border-left:none !important;border-right:none !important;border-top:none !important;
-  cursor:pointer !important;box-shadow:none !important;outline:none !important;
+  cursor:pointer !important;box-shadow:none !important;
   box-sizing:border-box !important;
 }
 #msc-mobile-menu ul>li:first-child>a,
@@ -443,14 +553,9 @@ body.et_fixed_nav{padding-top:0 !important;}
   #msc-navbar .msc-nav-links{display:none !important;}
   #msc-navbar .msc-cta{display:none !important;}
   #msc-navbar .msc-hamburger{display:flex !important;}
-  #msc-navbar,
-  #msc-mobile-menu,#msc-panel-overlay,
-  #msc-mobile-menu .msc-panel-close,
-  #msc-mobile-menu ul li a,#msc-mobile-menu .msc-mob-parent,
-  #msc-mobile-menu .msc-mob-arrow,#msc-mobile-menu .msc-mob-sub,
-  #msc-mobile-menu .msc-mob-cta,
-  #msc-navbar .msc-hamburger,#msc-navbar .msc-hamburger span,
-  #msc-navbar .msc-logo-img,#msc-navbar .msc-cta::before{
+  #msc-navbar,#msc-navbar *,#msc-navbar *::before,#msc-navbar *::after,
+  #msc-mobile-menu,#msc-mobile-menu *,
+  #msc-panel-overlay{
     transition:none !important;animation:none !important;
   }
 }
@@ -459,6 +564,71 @@ body.et_fixed_nav{padding-top:0 !important;}
   #msc-navbar .msc-logo-img{height:40px !important;max-width:130px !important;}
   #msc-mobile-menu{width:280px !important;}
   #msc-mobile-menu .msc-mobile-inner{padding:14px 20px 36px !important;}
+  #msc-navbar .msc-search-bar{padding:12px 20px !important;}
+}
+
+/* ── Skip-to-content link ── */
+#msc-skip-link{
+  position:fixed !important;top:-100% !important;left:16px !important;
+  z-index:1000001 !important;
+  font-family:var(--msc-font-sub) !important;font-size:0.85rem !important;font-weight:600 !important;
+  color:var(--msc-cream-light) !important;background:var(--msc-dark-brown) !important;
+  padding:10px 20px !important;border-radius:0 0 6px 6px !important;
+  text-decoration:none !important;
+  box-shadow:0 4px 16px rgba(59,47,38,0.2) !important;
+}
+#msc-skip-link:focus{
+  top:0 !important;outline:none !important;
+}
+
+/* ── Active page indicators ── */
+#msc-navbar .msc-nav-links li.msc-current>a{
+  color:var(--msc-copper) !important;
+  background-size:70% 1px !important;
+}
+#msc-navbar .msc-nav-links li.msc-current-ancestor>a{
+  color:var(--msc-copper) !important;
+}
+#msc-navbar .msc-dropdown li.msc-current>a{
+  color:var(--msc-copper) !important;
+  background:rgba(214,173,96,0.14) !important;
+  padding-left:26px !important;
+}
+#msc-mobile-menu li.msc-current>a{
+  color:var(--msc-copper) !important;
+}
+#msc-mobile-menu li.msc-current-ancestor>.msc-mob-parent-row .msc-mob-parent{
+  color:var(--msc-copper) !important;
+}
+
+/* ── Keyboard focus-visible ── */
+#msc-navbar .msc-nav-links li a:focus-visible,
+#msc-navbar .msc-cta:focus-visible,
+#msc-navbar .msc-logo:focus-visible,
+#msc-navbar .msc-icon-btn:focus-visible,
+#msc-navbar .msc-search-input:focus-visible,
+#msc-navbar .msc-search-submit:focus-visible,
+#msc-navbar .msc-hamburger:focus-visible{
+  outline:2px solid var(--msc-copper) !important;
+  outline-offset:2px !important;
+}
+#msc-navbar .msc-dropdown li a:focus-visible{
+  outline:2px solid var(--msc-copper) !important;
+  outline-offset:-2px !important;
+}
+#msc-mobile-menu a:focus-visible,
+#msc-mobile-menu button:focus-visible{
+  outline:2px solid var(--msc-copper) !important;
+  outline-offset:2px !important;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion:reduce){
+  #msc-navbar,#msc-navbar *,#msc-navbar *::before,#msc-navbar *::after,
+  #msc-mobile-menu,#msc-mobile-menu *,
+  #msc-panel-overlay{
+    transition:none !important;animation:none !important;
+  }
 }
 
 body.admin-bar #msc-navbar{top:32px !important;}
@@ -482,18 +652,36 @@ body.admin-bar #msc-navbar{top:32px !important;}
         $site_name = esc_html( apply_filters( 'msc_navbar_site_name', 'Master Sean Chan' ) );
         $cta_text  = esc_html( apply_filters( 'msc_navbar_cta_text', 'Book Appointment' ) );
         $cta_url   = esc_url( apply_filters( 'msc_navbar_cta_url',  home_url( '/contact/' ) ) );
+        $ig_url    = esc_url( apply_filters( 'msc_navbar_instagram_url', 'https://www.instagram.com/masterseanchan/' ) );
+        $search_action = esc_url( home_url( '/' ) );
 
         $desktop = self::render_desktop_items( $tree );
         $mobile  = self::render_mobile_items( $tree );
 ?>
+<a id="msc-skip-link" href="#main-content">Skip to content</a>
+
 <nav id="msc-navbar" role="navigation" aria-label="<?php echo $logo_alt; ?>">
   <div class="msc-nav-container">
     <a class="msc-logo" href="<?php echo $logo_url; ?>" aria-label="<?php echo $logo_alt; ?> – Home">
       <img class="msc-logo-img" src="<?php echo $logo_img; ?>" alt="<?php echo $logo_alt; ?>" width="160" height="52" loading="eager" fetchpriority="high"/>
     </a>
     <ul class="msc-nav-links" role="menubar"><?php echo $desktop; ?></ul>
+    <div class="msc-nav-actions">
+      <a class="msc-icon-btn" href="<?php echo $ig_url; ?>" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+      </a>
+      <button class="msc-icon-btn" id="msc-search-toggle" aria-label="Search" aria-expanded="false" aria-controls="msc-search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
+      </button>
+    </div>
     <a class="msc-cta" href="<?php echo $cta_url; ?>" aria-label="<?php echo $cta_text; ?>"><span><?php echo $cta_text; ?></span></a>
     <button class="msc-hamburger" id="msc-hamburger-btn" aria-expanded="false" aria-controls="msc-mobile-menu" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
+  </div>
+  <div class="msc-search-bar" id="msc-search-bar">
+    <form class="msc-search-form" action="<?php echo $search_action; ?>" method="get" role="search">
+      <input class="msc-search-input" type="search" name="s" placeholder="Search articles, services..." aria-label="Search the site">
+      <button class="msc-search-submit" type="submit">Search</button>
+    </form>
   </div>
 </nav>
 
@@ -507,6 +695,12 @@ body.admin-bar #msc-navbar{top:32px !important;}
   <div class="msc-mobile-inner">
     <ul><?php echo $mobile; ?></ul>
     <a class="msc-mob-cta" href="<?php echo $cta_url; ?>"><?php echo $cta_text; ?></a>
+    <div class="msc-mob-social">
+      <a href="<?php echo $ig_url; ?>" target="_blank" rel="noopener noreferrer" aria-label="Follow on Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+        <span>@masterseanchan</span>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -556,8 +750,38 @@ body.admin-bar #msc-navbar{top:32px !important;}
     });
   });
 
+  /* Search bar toggle */
+  var searchToggle=document.getElementById('msc-search-toggle');
+  var searchBar=document.getElementById('msc-search-bar');
+  var searchInput=searchBar?searchBar.querySelector('.msc-search-input'):null;
+  if(searchToggle&&searchBar){
+    searchToggle.addEventListener('click',function(){
+      var isOpen=searchBar.classList.contains('msc-open');
+      searchBar.classList.toggle('msc-open',!isOpen);
+      searchToggle.setAttribute('aria-expanded',String(!isOpen));
+      if(!isOpen&&searchInput)searchInput.focus();
+    });
+  }
+
   document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'){setPanel(false);hamburger.focus();}
+    if(e.key==='Escape'){
+      setPanel(false);
+      if(searchBar&&searchBar.classList.contains('msc-open')){
+        searchBar.classList.remove('msc-open');
+        searchToggle.setAttribute('aria-expanded','false');
+        searchToggle.focus();
+      } else {
+        hamburger.focus();
+      }
+    }
+  });
+
+  /* Close search when clicking outside */
+  document.addEventListener('click',function(e){
+    if(searchBar&&searchBar.classList.contains('msc-open')&&!searchBar.contains(e.target)&&e.target!==searchToggle&&!searchToggle.contains(e.target)){
+      searchBar.classList.remove('msc-open');
+      searchToggle.setAttribute('aria-expanded','false');
+    }
   });
 })();
 </script>

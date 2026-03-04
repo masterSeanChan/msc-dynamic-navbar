@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSC Navbar – Demo</title>
+
+<style id="msc-navbar-styles">
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Source+Sans+Pro:wght@300;400;600&family=Source+Serif+Pro:wght@400;600&display=swap');
+
+#msc-navbar,#msc-mobile-menu,#msc-panel-overlay{
+  --msc-dark-brown:#3B2F26;--msc-brown-mid:#5C4A3A;--msc-gold:#D6AD60;
+  --msc-copper:#B26E3C;--msc-taupe:#A8957A;--msc-cream:#EFE4C8;
+  --msc-cream-light:#FAF6EE;--msc-cream-border:#DDD0B0;
+  --msc-font-heading:'Playfair Display',Georgia,serif;
+  --msc-font-sub:'Source Sans Pro',sans-serif;
+  --msc-font-body:'Source Serif Pro',Georgia,serif;
+  --msc-nav-height:82px;
+  --msc-ease:0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Source Serif Pro',Georgia,serif;
+  background:var(--msc-cream-light);color:var(--msc-dark-brown);
+  padding-top:82px;
+}
+
+#msc-navbar{
+  position:fixed;top:0;left:0;right:0;
+  width:100%;z-index:999999;
+  height:var(--msc-nav-height);
+  background:rgba(250,246,238,0.95);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 1px 0 rgba(168,149,122,0.3),0 4px 28px rgba(59,47,38,0.06);
+  border-bottom:none;
+  transition:height var(--msc-ease),background var(--msc-ease),box-shadow var(--msc-ease);
+  display:flex;align-items:center;
+  box-sizing:border-box;margin:0;padding:0;
+}
+#msc-navbar::after{
+  content:'';position:absolute;
+  bottom:0;left:8%;right:8%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(214,173,96,0.5),transparent);
+  pointer-events:none;
+}
+#msc-navbar.msc-scrolled{
+  height:66px;background:rgba(250,246,238,0.99);
+  box-shadow:0 1px 0 rgba(168,149,122,0.35),0 8px 36px rgba(59,47,38,0.09);
+}
+
+#msc-navbar .msc-nav-container{
+  width:100%;max-width:1300px;
+  margin:0 auto;padding:0 40px;
+  display:flex;align-items:center;
+  justify-content:space-between;gap:16px;
+  box-sizing:border-box;
+}
+
+#msc-navbar .msc-logo{
+  display:flex;align-items:center;
+  text-decoration:none;flex-shrink:0;
+  border:none;background:none;line-height:0;
+}
+#msc-navbar .msc-logo-img{
+  display:block;width:auto;
+  max-width:160px;height:52px;
+  object-fit:contain;object-position:left center;
+  transition:opacity var(--msc-ease),transform var(--msc-ease);
+}
+#msc-navbar .msc-logo:hover .msc-logo-img{opacity:0.78;transform:translateY(-1px);}
+#msc-navbar.msc-scrolled .msc-logo-img{height:42px;}
+
+#msc-navbar .msc-nav-links{
+  display:flex;align-items:center;
+  list-style:none;gap:0;
+  margin:0;padding:0;
+  flex:1;justify-content:center;
+}
+#msc-navbar .msc-nav-links li{
+  margin:0;padding:0;
+  list-style:none;position:relative;
+}
+#msc-navbar .msc-nav-links li a{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--msc-font-heading);
+  font-size:0.95rem;font-weight:400;font-style:italic;
+  color:var(--msc-brown-mid);
+  text-decoration:none;letter-spacing:0.03em;text-transform:none;
+  padding:7px 11px;border-radius:3px;white-space:nowrap;
+  background-image:linear-gradient(var(--msc-copper),var(--msc-copper));
+  background-size:0% 1px;background-repeat:no-repeat;
+  background-position:center bottom 1px;
+  transition:color var(--msc-ease),background-size var(--msc-ease),background-color var(--msc-ease);
+  border:none;box-shadow:none;
+}
+#msc-navbar .msc-nav-links li a:hover{
+  color:var(--msc-copper);
+  background-size:70% 1px;
+  background-color:rgba(178,110,60,0.05);
+}
+
+#msc-navbar .msc-nav-links li.msc-has-dropdown>a::before{
+  content:'';position:absolute;
+  bottom:-6px;left:0;right:0;
+  height:8px;background:transparent;
+}
+#msc-navbar .msc-nav-links li.msc-has-dropdown>a::after{
+  content:'';display:inline-block;
+  width:4px;height:4px;
+  border-right:1.2px solid currentColor;
+  border-bottom:1.2px solid currentColor;
+  transform:rotate(45deg) translateY(-2px);
+  flex-shrink:0;opacity:0.7;
+  transition:transform var(--msc-ease),opacity var(--msc-ease);
+}
+#msc-navbar .msc-nav-links li.msc-has-dropdown:hover>a::after{
+  transform:rotate(-135deg) translateY(2px);opacity:1;
+}
+
+#msc-navbar .msc-dropdown{
+  position:absolute;top:100%;
+  left:50%;transform:translateX(-50%) translateY(4px);
+  background:var(--msc-cream-light);
+  border:1px solid var(--msc-cream-border);
+  border-top:2px solid var(--msc-gold);
+  min-width:240px;list-style:none;
+  padding:6px 0 8px;margin:0;
+  border-radius:0 0 8px 8px;
+  opacity:0;pointer-events:none;
+  transition:opacity var(--msc-ease),transform var(--msc-ease);
+  box-shadow:0 16px 48px rgba(59,47,38,0.1),0 4px 12px rgba(59,47,38,0.06);
+  z-index:1000000;
+}
+#msc-navbar .msc-nav-links li.msc-has-dropdown:hover .msc-dropdown{
+  opacity:1;pointer-events:all;
+  transform:translateX(-50%) translateY(0);
+}
+#msc-navbar .msc-dropdown li{list-style:none;margin:0;padding:0;}
+#msc-navbar .msc-dropdown li+li{border-top:1px solid rgba(168,149,122,0.15);}
+#msc-navbar .msc-dropdown li a{
+  display:block;
+  font-family:var(--msc-font-body);font-size:0.9rem;
+  font-weight:400;font-style:normal;
+  color:var(--msc-dark-brown);text-decoration:none;
+  letter-spacing:0.01em;padding:10px 22px;
+  white-space:nowrap;background-image:none;
+  transition:background var(--msc-ease),color var(--msc-ease),padding-left var(--msc-ease);
+}
+#msc-navbar .msc-dropdown li a:hover{
+  background:rgba(214,173,96,0.14);
+  color:var(--msc-copper);padding-left:30px;
+}
+
+#msc-navbar .msc-cta{
+  display:inline-flex;align-items:center;
+  font-family:var(--msc-font-sub);font-size:0.75rem;
+  font-weight:600;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--msc-cream-light);background:var(--msc-dark-brown);
+  text-decoration:none;padding:11px 22px;
+  border-radius:40px;white-space:nowrap;flex-shrink:0;
+  position:relative;overflow:hidden;border:none;
+  box-shadow:0 2px 14px rgba(59,47,38,0.2);
+  transition:color var(--msc-ease),transform var(--msc-ease),box-shadow var(--msc-ease);
+}
+#msc-navbar .msc-cta::before{
+  content:'';position:absolute;inset:0;
+  background:var(--msc-copper);transform:translateX(-101%);
+  border-radius:40px;transition:transform var(--msc-ease);
+}
+#msc-navbar .msc-cta span{position:relative;z-index:1;}
+#msc-navbar .msc-cta:hover{
+  color:var(--msc-cream-light);
+  box-shadow:0 6px 28px rgba(178,110,60,0.32);transform:translateY(-1px);
+}
+#msc-navbar .msc-cta:hover::before{transform:translateX(0);}
+
+/* ── Nav actions (IG + search icons) ── */
+#msc-navbar .msc-nav-actions{
+  display:flex;align-items:center;gap:4px;
+  flex-shrink:0;
+}
+#msc-navbar .msc-icon-btn{
+  display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;
+  color:var(--msc-brown-mid);border-radius:50%;
+  transition:color var(--msc-ease),background var(--msc-ease);
+  text-decoration:none;border:none;background:none;
+  cursor:pointer;padding:0;box-shadow:none;
+}
+#msc-navbar .msc-icon-btn:hover{
+  color:var(--msc-copper);
+  background:rgba(178,110,60,0.08);
+}
+#msc-navbar .msc-icon-btn svg{
+  width:18px;height:18px;flex-shrink:0;
+}
+
+/* ── Search bar ── */
+#msc-navbar .msc-search-bar{
+  position:absolute;top:100%;left:0;right:0;
+  background:var(--msc-cream-light);
+  border-top:1px solid var(--msc-cream-border);
+  border-bottom:2px solid var(--msc-gold);
+  box-shadow:0 12px 36px rgba(59,47,38,0.1);
+  padding:16px 40px;
+  display:none;z-index:1;
+}
+#msc-navbar .msc-search-bar.msc-open{display:block;}
+#msc-navbar .msc-search-form{
+  max-width:600px;margin:0 auto;
+  display:flex;gap:10px;
+}
+#msc-navbar .msc-search-input{
+  flex:1;
+  font-family:var(--msc-font-body);font-size:1rem;
+  color:var(--msc-dark-brown);background:#fff;
+  border:1px solid var(--msc-cream-border);
+  border-radius:6px;padding:10px 16px;
+  outline:none;box-shadow:none;
+  -webkit-appearance:none;
+}
+#msc-navbar .msc-search-input:focus{
+  border-color:var(--msc-copper);
+  box-shadow:0 0 0 3px rgba(178,110,60,0.12);
+}
+#msc-navbar .msc-search-submit{
+  font-family:var(--msc-font-sub);font-size:0.75rem;
+  font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--msc-cream-light);background:var(--msc-dark-brown);
+  border:none;border-radius:6px;
+  padding:10px 22px;cursor:pointer;
+  transition:background var(--msc-ease);
+}
+#msc-navbar .msc-search-submit:hover{background:var(--msc-copper);}
+
+/* ── Mobile menu social ── */
+#msc-mobile-menu .msc-mob-social{
+  display:flex;align-items:center;gap:12px;
+  margin-top:20px;padding-top:16px;
+  border-top:1px solid rgba(168,149,122,0.2);
+}
+#msc-mobile-menu .msc-mob-social a{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--msc-font-body);font-size:0.9rem;
+  color:var(--msc-brown-mid);text-decoration:none;
+  border:none;padding:0;
+}
+#msc-mobile-menu .msc-mob-social a:hover{color:var(--msc-copper);}
+#msc-mobile-menu .msc-mob-social svg{width:18px;height:18px;}
+
+#msc-navbar .msc-hamburger{
+  display:none;flex-direction:column;
+  justify-content:center;gap:5px;
+  width:40px;height:40px;
+  background:transparent;border:1px solid rgba(92,74,58,0.22);
+  border-radius:4px;cursor:pointer;padding:8px;
+  flex-shrink:0;box-shadow:none;
+  transition:border-color var(--msc-ease),background var(--msc-ease);
+}
+#msc-navbar .msc-hamburger:hover{
+  background:rgba(92,74,58,0.06);border-color:var(--msc-copper);
+}
+#msc-navbar .msc-hamburger span{
+  display:block;width:100%;height:1.5px;
+  background:var(--msc-dark-brown);border-radius:2px;
+  transition:transform var(--msc-ease),opacity var(--msc-ease);
+  transform-origin:center;
+}
+#msc-navbar .msc-hamburger.msc-open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);}
+#msc-navbar .msc-hamburger.msc-open span:nth-child(2){opacity:0;transform:scaleX(0);}
+#msc-navbar .msc-hamburger.msc-open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);}
+
+#msc-panel-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(59,47,38,0.35);z-index:999997;
+  opacity:0;
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+}
+#msc-panel-overlay.msc-panel-open{display:block;opacity:1;}
+
+#msc-mobile-menu{
+  position:fixed;top:0;left:0;
+  width:300px;max-width:85vw;height:100vh;
+  background:var(--msc-cream-light);
+  border-right:1px solid var(--msc-cream-border);
+  box-shadow:4px 0 32px rgba(59,47,38,0.14);
+  transform:translateX(-100%);
+  z-index:999998;
+  box-sizing:border-box;overflow-y:auto;overflow-x:hidden;
+}
+#msc-mobile-menu.msc-panel-open{transform:translateX(0);}
+
+#msc-mobile-menu .msc-panel-header{
+  display:flex;align-items:center;
+  justify-content:space-between;padding:20px 24px 16px;
+  border-bottom:1px solid var(--msc-cream-border);
+  position:sticky;top:0;
+  background:var(--msc-cream-light);z-index:1;
+}
+#msc-mobile-menu .msc-panel-logo{
+  font-family:var(--msc-font-heading);font-size:1.05rem;
+  font-style:italic;color:var(--msc-dark-brown);opacity:0.7;
+}
+#msc-mobile-menu .msc-panel-close{
+  width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:1px solid rgba(92,74,58,0.2);
+  border-radius:50%;cursor:pointer;
+  color:var(--msc-dark-brown);font-size:1rem;line-height:1;
+  flex-shrink:0;box-shadow:none;
+}
+#msc-mobile-menu .msc-panel-close:hover{
+  background:rgba(92,74,58,0.08);
+  border-color:var(--msc-copper);color:var(--msc-copper);
+}
+
+#msc-mobile-menu .msc-mobile-inner{padding:16px 24px 40px;box-sizing:border-box;}
+#msc-mobile-menu ul{list-style:none;margin:0;padding:0;}
+#msc-mobile-menu ul li{list-style:none;margin:0;padding:0;}
+#msc-mobile-menu ul li a,#msc-mobile-menu .msc-mob-parent{
+  display:block;
+  font-family:var(--msc-font-heading);font-size:1.15rem;
+  font-weight:400;font-style:italic;
+  color:var(--msc-dark-brown);text-decoration:none;
+  letter-spacing:0.02em;padding:13px 0;
+  border-bottom:1px solid rgba(168,149,122,0.2);
+  width:100%;text-align:left;background:none;
+  border-left:none;border-right:none;border-top:none;
+  cursor:pointer;box-shadow:none;
+  box-sizing:border-box;
+}
+#msc-mobile-menu ul>li:first-child>a,
+#msc-mobile-menu ul>li:first-child>.msc-mob-parent-row{
+  border-top:1px solid rgba(168,149,122,0.2);
+}
+#msc-mobile-menu ul li a:hover{color:var(--msc-copper);}
+#msc-mobile-menu .msc-mob-parent:hover{color:var(--msc-copper);}
+
+#msc-mobile-menu .msc-mob-parent-row{
+  display:flex;align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid rgba(168,149,122,0.2);
+}
+#msc-mobile-menu .msc-mob-parent-row .msc-mob-parent{border-bottom:none;flex:1;}
+
+#msc-mobile-menu .msc-mob-arrow{
+  width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+#msc-mobile-menu .msc-mob-arrow.msc-open svg{transform:rotate(180deg);}
+
+#msc-mobile-menu .msc-mob-sub{
+  list-style:none;max-height:0;overflow:hidden;
+  background:rgba(168,149,122,0.07);
+  border-radius:0 0 6px 6px;margin:0;padding:0;
+}
+#msc-mobile-menu .msc-mob-sub.msc-open{max-height:600px;}
+#msc-mobile-menu .msc-mob-sub li a{
+  font-family:var(--msc-font-body);font-size:0.92rem;
+  font-weight:400;font-style:normal;
+  color:var(--msc-brown-mid);padding:9px 0 9px 20px;
+  letter-spacing:0.01em;border-top:none;
+  border-bottom:1px solid rgba(168,149,122,0.12);
+}
+#msc-mobile-menu .msc-mob-sub li a:hover{color:var(--msc-copper);}
+
+#msc-mobile-menu .msc-mob-cta{
+  display:block;margin-top:28px;text-align:center;
+  font-family:var(--msc-font-sub);font-size:0.78rem;
+  font-weight:600;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--msc-cream-light);background:var(--msc-dark-brown);
+  text-decoration:none;padding:14px 20px;
+  border-radius:40px;border:none;
+  box-shadow:0 2px 14px rgba(59,47,38,0.18);
+}
+#msc-mobile-menu .msc-mob-cta:hover{
+  background:var(--msc-copper);
+}
+
+@media (max-width:960px){
+  #msc-navbar .msc-nav-links{display:none;}
+  #msc-navbar .msc-cta{display:none;}
+  #msc-navbar .msc-hamburger{display:flex;}
+  #msc-navbar,#msc-navbar *,#msc-navbar *::before,#msc-navbar *::after,
+  #msc-mobile-menu,#msc-mobile-menu *,
+  #msc-panel-overlay{
+    transition:none !important;animation:none !important;
+  }
+}
+@media (max-width:480px){
+  #msc-navbar .msc-nav-container{padding:0 20px;}
+  #msc-navbar .msc-logo-img{height:40px;max-width:130px;}
+  #msc-mobile-menu{width:280px;}
+  #msc-mobile-menu .msc-mobile-inner{padding:14px 20px 36px;}
+  #msc-navbar .msc-search-bar{padding:12px 20px;}
+}
+
+/* ── Skip-to-content link ── */
+#msc-skip-link{
+  position:fixed;top:-100%;left:16px;
+  z-index:1000001;
+  font-family:var(--msc-font-sub);font-size:0.85rem;font-weight:600;
+  color:var(--msc-cream-light);background:var(--msc-dark-brown);
+  padding:10px 20px;border-radius:0 0 6px 6px;
+  text-decoration:none;
+  box-shadow:0 4px 16px rgba(59,47,38,0.2);
+}
+#msc-skip-link:focus{top:0;outline:none;}
+
+/* ── Active page indicators ── */
+#msc-navbar .msc-nav-links li.msc-current>a{
+  color:var(--msc-copper);background-size:70% 1px;
+}
+#msc-navbar .msc-nav-links li.msc-current-ancestor>a{
+  color:var(--msc-copper);
+}
+#msc-navbar .msc-dropdown li.msc-current>a{
+  color:var(--msc-copper);background:rgba(214,173,96,0.14);padding-left:26px;
+}
+#msc-mobile-menu li.msc-current>a{color:var(--msc-copper);}
+#msc-mobile-menu li.msc-current-ancestor>.msc-mob-parent-row .msc-mob-parent{color:var(--msc-copper);}
+
+/* ── Keyboard focus-visible ── */
+#msc-navbar .msc-nav-links li a:focus-visible,
+#msc-navbar .msc-cta:focus-visible,
+#msc-navbar .msc-logo:focus-visible,
+#msc-navbar .msc-icon-btn:focus-visible,
+#msc-navbar .msc-search-input:focus-visible,
+#msc-navbar .msc-search-submit:focus-visible,
+#msc-navbar .msc-hamburger:focus-visible{
+  outline:2px solid var(--msc-copper);outline-offset:2px;
+}
+#msc-navbar .msc-dropdown li a:focus-visible{
+  outline:2px solid var(--msc-copper);outline-offset:-2px;
+}
+#msc-mobile-menu a:focus-visible,
+#msc-mobile-menu button:focus-visible{
+  outline:2px solid var(--msc-copper);outline-offset:2px;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion:reduce){
+  #msc-navbar,#msc-navbar *,#msc-navbar *::before,#msc-navbar *::after,
+  #msc-mobile-menu,#msc-mobile-menu *,
+  #msc-panel-overlay{
+    transition:none !important;animation:none !important;
+  }
+}
+
+/* ── Demo page styles ── */
+.demo-content{max-width:800px;margin:0 auto;padding:60px 40px;}
+.demo-content h1{font-family:'Playfair Display',Georgia,serif;font-size:2.2rem;font-weight:600;font-style:italic;color:#3B2F26;margin-bottom:12px;}
+.demo-content p{font-size:1.05rem;line-height:1.8;color:#5C4A3A;margin-bottom:20px;}
+.demo-content .demo-note{background:rgba(214,173,96,0.12);border:1px solid #DDD0B0;border-left:3px solid #D6AD60;padding:16px 20px;border-radius:0 6px 6px 0;font-size:0.92rem;color:#5C4A3A;margin:30px 0;}
+.demo-content .demo-note strong{color:#3B2F26;}
+.demo-section{padding:80px 40px;max-width:800px;margin:0 auto;}
+.demo-section h2{font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;font-style:italic;color:#3B2F26;margin-bottom:16px;}
+.demo-section p{font-size:1rem;line-height:1.7;color:#5C4A3A;}
+</style>
+</head>
+<body>
+
+<a id="msc-skip-link" href="#main-content">Skip to content</a>
+
+<nav id="msc-navbar" role="navigation" aria-label="Master Sean Chan – Feng Shui Master Singapore">
+  <div class="msc-nav-container">
+
+    <a class="msc-logo" href="#" aria-label="Master Sean Chan – Home">
+      <img class="msc-logo-img"
+        src="https://www.masterseanchan.com/wp-content/uploads/2026/02/Sean-Chan-Logo-A9-Icon.png"
+        alt="Master Sean Chan – Feng Shui Master Singapore"
+        width="160" height="52" loading="eager" fetchpriority="high"/>
+    </a>
+
+    <ul class="msc-nav-links" role="menubar">
+      <li class="msc-current" role="none"><a href="#" role="menuitem" aria-current="page">Home</a></li>
+      <li role="none"><a href="#about" role="menuitem">Get To Know Me</a></li>
+      <li role="none"><a href="#faq" role="menuitem">FAQ</a></li>
+      <li role="none"><a href="#media" role="menuitem">Media</a></li>
+      <li role="none"><a href="#testimonials" role="menuitem">Testimonials</a></li>
+
+      <li class="msc-has-dropdown" role="none">
+        <a href="#" role="menuitem" aria-haspopup="true" aria-expanded="false" onclick="return false;" style="cursor:default;">Services</a>
+        <ul class="msc-dropdown" role="menu">
+          <li><a href="#" role="menuitem">BaZi Consultation</a></li>
+          <li><a href="#" role="menuitem">Zi Wei Dou Shu Consultation</a></li>
+          <li><a href="#" role="menuitem">Qi Men Dun Jia Forecasting</a></li>
+          <li><a href="#" role="menuitem">Feng Shui Audit</a></li>
+          <li><a href="#" role="menuitem">Feng Shui House Hunt</a></li>
+          <li><a href="#" role="menuitem">Hellenistic Western Astrology</a></li>
+          <li><a href="#" role="menuitem">Chinese Name Selection</a></li>
+          <li><a href="#" role="menuitem">Auspicious Date Selection</a></li>
+          <li><a href="#" role="menuitem">Business Advisory</a></li>
+        </ul>
+      </li>
+
+      <li role="none"><a href="#lessons" role="menuitem">Lessons</a></li>
+      <li role="none"><a href="#blog" role="menuitem">Blog</a></li>
+
+      <li class="msc-has-dropdown" role="none">
+        <a href="#" role="menuitem" aria-haspopup="true" aria-expanded="false" onclick="return false;" style="cursor:default;">Tools</a>
+        <ul class="msc-dropdown" role="menu">
+          <li><a href="#" role="menuitem">Case Studies</a></li>
+          <li><a href="#" role="menuitem">BaZi Calculator</a></li>
+          <li><a href="#" role="menuitem">Flying Star Calculator</a></li>
+          <li><a href="#" role="menuitem">Featured Feng Shui Projects</a></li>
+        </ul>
+      </li>
+    </ul>
+
+    <div class="msc-nav-actions">
+      <a class="msc-icon-btn" href="https://www.instagram.com/masterseanchan/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+      </a>
+      <button class="msc-icon-btn" id="msc-search-toggle" aria-label="Search" aria-expanded="false" aria-controls="msc-search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>
+      </button>
+    </div>
+
+    <a class="msc-cta" href="#contact" aria-label="Book an appointment with Master Sean Chan">
+      <span>Book Appointment</span>
+    </a>
+
+    <button class="msc-hamburger" id="msc-hamburger-btn"
+      aria-expanded="false" aria-controls="msc-mobile-menu" aria-label="Open navigation menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <div class="msc-search-bar" id="msc-search-bar">
+    <form class="msc-search-form" action="#" method="get" role="search">
+      <input class="msc-search-input" type="search" name="s" placeholder="Search articles, services..." aria-label="Search the site">
+      <button class="msc-search-submit" type="submit">Search</button>
+    </form>
+  </div>
+</nav>
+
+<div id="msc-panel-overlay" aria-hidden="true"></div>
+
+<div id="msc-mobile-menu" aria-hidden="true" role="dialog" aria-label="Navigation menu">
+  <div class="msc-panel-header">
+    <span class="msc-panel-logo">Master Sean Chan</span>
+    <button class="msc-panel-close" id="msc-panel-close-btn" aria-label="Close navigation menu">&#x2715;</button>
+  </div>
+  <div class="msc-mobile-inner">
+    <ul>
+      <li class="msc-current"><a href="#" aria-current="page">Home</a></li>
+      <li><a href="#about">Get To Know Me</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#media">Media</a></li>
+      <li><a href="#testimonials">Testimonials</a></li>
+
+      <li>
+        <div class="msc-mob-parent-row">
+          <button class="msc-mob-parent" aria-expanded="false" aria-controls="msc-mob-sub-1">Services</button>
+          <span class="msc-mob-arrow">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 4.5L7 9.5L12 4.5" stroke="#B26E3C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+        <ul class="msc-mob-sub" id="msc-mob-sub-1">
+          <li><a href="#">BaZi Consultation</a></li>
+          <li><a href="#">Zi Wei Dou Shu Consultation</a></li>
+          <li><a href="#">Qi Men Dun Jia Forecasting</a></li>
+          <li><a href="#">Feng Shui Audit</a></li>
+          <li><a href="#">Feng Shui House Hunt</a></li>
+          <li><a href="#">Hellenistic Western Astrology</a></li>
+          <li><a href="#">Chinese Name Selection</a></li>
+          <li><a href="#">Auspicious Date Selection</a></li>
+          <li><a href="#">Business Advisory</a></li>
+        </ul>
+      </li>
+
+      <li><a href="#lessons">Lessons</a></li>
+      <li><a href="#blog">Blog</a></li>
+
+      <li>
+        <div class="msc-mob-parent-row">
+          <button class="msc-mob-parent" aria-expanded="false" aria-controls="msc-mob-sub-2">Tools</button>
+          <span class="msc-mob-arrow">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 4.5L7 9.5L12 4.5" stroke="#B26E3C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+        <ul class="msc-mob-sub" id="msc-mob-sub-2">
+          <li><a href="#">Case Studies</a></li>
+          <li><a href="#">BaZi Calculator</a></li>
+          <li><a href="#">Flying Star Calculator</a></li>
+          <li><a href="#">Featured Feng Shui Projects</a></li>
+        </ul>
+      </li>
+    </ul>
+    <a class="msc-mob-cta" href="#contact">Book An Appointment</a>
+    <div class="msc-mob-social">
+      <a href="https://www.instagram.com/masterseanchan/" target="_blank" rel="noopener noreferrer" aria-label="Follow on Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+        <span>@masterseanchan</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div id="main-content">
+  <div class="demo-content">
+    <h1>MSC Dynamic Navbar – Demo</h1>
+    <p>This is a standalone preview of the navigation bar with all features enabled.</p>
+
+    <div class="demo-note">
+      <strong>Features to test:</strong><br>
+      &bull; <strong>Instagram icon</strong> — between nav links and CTA, opens in new tab<br>
+      &bull; <strong>Search icon</strong> — click the magnifying glass to toggle the search bar<br>
+      &bull; Hover over nav links, dropdowns, and "Book Appointment" for animations<br>
+      &bull; Scroll down to see the navbar shrink<br>
+      &bull; Press <strong>Tab</strong> to see keyboard focus outlines + skip-to-content link<br>
+      &bull; Press <strong>Escape</strong> to close search bar or mobile panel<br>
+      &bull; Click outside the search bar to dismiss it<br>
+      &bull; Resize to &le;960px for mobile — IG + search icons stay visible<br>
+      &bull; Open mobile menu to see <strong>@masterseanchan</strong> link at the bottom
+    </div>
+  </div>
+
+  <div class="demo-section"><h2>About</h2><p>Placeholder section for scroll testing. The navbar transitions from 82px to 66px after scrolling 20px.</p></div>
+  <div class="demo-section"><h2>Services</h2><p>Another section. On mobile (&le;960px), all transitions are disabled — the hamburger menu opens and closes instantly.</p></div>
+  <div class="demo-section"><h2>Testimonials</h2><p>Try enabling "Reduce motion" in your OS accessibility settings — all desktop animations will also be stripped.</p></div>
+  <div class="demo-section"><h2>Blog</h2><p>More placeholder content to test the scroll behaviour of the fixed navigation bar.</p></div>
+  <div class="demo-section"><h2>Contact</h2><p>Final section. The "Book Appointment" CTA button links here in the live site.</p></div>
+  <div style="height:300px;"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var navbar=document.getElementById('msc-navbar');
+  var hamburger=document.getElementById('msc-hamburger-btn');
+  var panel=document.getElementById('msc-mobile-menu');
+  var overlay=document.getElementById('msc-panel-overlay');
+  var closeBtn=document.getElementById('msc-panel-close-btn');
+  if(!navbar||!hamburger||!panel)return;
+
+  window.addEventListener('scroll',function(){
+    navbar.classList.toggle('msc-scrolled',window.pageYOffset>20);
+  },{passive:true});
+
+  function setPanel(open){
+    hamburger.classList.toggle('msc-open',open);
+    hamburger.setAttribute('aria-expanded',String(open));
+    panel.classList.toggle('msc-panel-open',open);
+    panel.setAttribute('aria-hidden',String(!open));
+    if(overlay){overlay.classList.toggle('msc-panel-open',open);overlay.setAttribute('aria-hidden',String(!open));}
+    document.body.style.overflow=open?'hidden':'';
+  }
+
+  hamburger.addEventListener('click',function(){setPanel(!panel.classList.contains('msc-panel-open'));});
+  if(closeBtn)closeBtn.addEventListener('click',function(){setPanel(false);});
+  if(overlay)overlay.addEventListener('click',function(){setPanel(false);});
+
+  panel.querySelectorAll('.msc-mob-parent').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var sub=document.getElementById(btn.getAttribute('aria-controls'));
+      var row=btn.closest('.msc-mob-parent-row');
+      var arrow=row?row.querySelector('.msc-mob-arrow'):null;
+      var isOpen=sub.classList.contains('msc-open');
+      sub.classList.toggle('msc-open',!isOpen);
+      if(arrow)arrow.classList.toggle('msc-open',!isOpen);
+      btn.setAttribute('aria-expanded',String(!isOpen));
+    });
+  });
+
+  /* Search bar toggle */
+  var searchToggle=document.getElementById('msc-search-toggle');
+  var searchBar=document.getElementById('msc-search-bar');
+  var searchInput=searchBar?searchBar.querySelector('.msc-search-input'):null;
+  if(searchToggle&&searchBar){
+    searchToggle.addEventListener('click',function(){
+      var isOpen=searchBar.classList.contains('msc-open');
+      searchBar.classList.toggle('msc-open',!isOpen);
+      searchToggle.setAttribute('aria-expanded',String(!isOpen));
+      if(!isOpen&&searchInput)searchInput.focus();
+    });
+  }
+
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){
+      setPanel(false);
+      if(searchBar&&searchBar.classList.contains('msc-open')){
+        searchBar.classList.remove('msc-open');
+        searchToggle.setAttribute('aria-expanded','false');
+        searchToggle.focus();
+      } else {
+        hamburger.focus();
+      }
+    }
+  });
+
+  /* Close search when clicking outside */
+  document.addEventListener('click',function(e){
+    if(searchBar&&searchBar.classList.contains('msc-open')&&!searchBar.contains(e.target)&&e.target!==searchToggle&&!searchToggle.contains(e.target)){
+      searchBar.classList.remove('msc-open');
+      searchToggle.setAttribute('aria-expanded','false');
+    }
+  });
+})();
+</script>
+</body>
+</html>
