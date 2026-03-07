@@ -173,6 +173,7 @@ final class MSC_Dynamic_Navbar {
     /* ─── CSS (identical to original) ─────────────────────── */
 
     public static function print_styles() {
+        if ( is_admin() ) return;
 ?>
 <style id="msc-navbar-styles">
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Source+Sans+Pro:wght@300;400;600&family=Source+Serif+Pro:wght@400;600&display=swap');
@@ -655,6 +656,7 @@ body.admin-bar #msc-navbar{top:32px !important;}
     /* ─── Navbar HTML + JS ────────────────────────────────── */
 
     public static function print_navbar() {
+        if ( is_admin() ) return;
         $tree = self::get_menu_tree();
         if ( ! $tree ) return;
 
