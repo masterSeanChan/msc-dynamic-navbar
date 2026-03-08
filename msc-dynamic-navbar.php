@@ -14,8 +14,10 @@ final class MSC_Dynamic_Navbar {
 
     public static function boot() {
         add_action( 'after_setup_theme', [ __CLASS__, 'register_menu' ] );
-        add_action( 'wp_head',           [ __CLASS__, 'print_styles' ], 999 );
-        add_action( 'wp_footer',         [ __CLASS__, 'print_navbar' ], 5 );
+        if ( ! is_admin() ) {
+            add_action( 'wp_head',   [ __CLASS__, 'print_styles' ], 999 );
+            add_action( 'wp_footer', [ __CLASS__, 'print_navbar' ], 5 );
+        }
     }
 
     /* ─── Register menu location ──────────────────────────── */
